@@ -2,6 +2,8 @@ import { ponder } from "ponder:registry";
 import { LendingProtocol, Silo, Market } from "ponder:schema";
 import { constants } from "../utils/constants";
 import { sql } from "drizzle-orm";
+import { createEntityId } from "../utils/helpers";
+import { create } from "domain";
 
 function getProtocolId(chainId: number) {
   return `LendingProtocol-ChainId#${chainId}`;
@@ -58,11 +60,11 @@ ponder.on("SiloFactory:NewSilo", async ({ event, context }) => {
 
   if (!protocol) return;
 
-  const siloId = event.args.silo0.toLowerCase();
+  const siloId = createEntityId(event.args.siloConfig, chainId);
 
   await db.insert(Silo).values({
     id: siloId,
-    name: `Silo ${event.args.silo0}`,
+    name: `Silo ${event.args.silo0}-${event.args.silo1}`,
     chainId,
     deployerFee: constants.BIGINT_ZERO,
     daoFee: constants.BIGINT_ZERO,

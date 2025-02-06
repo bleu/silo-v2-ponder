@@ -1,4 +1,4 @@
-import { createConfig, factory } from "ponder";
+import { createConfig, factory, mergeAbis } from "ponder";
 import { http } from "viem";
 import { parseAbiItem } from "viem";
 
@@ -12,6 +12,8 @@ import { InterestRateModelV2Abi } from "./abis/InterestRateModelV2Abi";
 import { UniswapV3OracleAbi } from "./abis/UniswapV3OracleAbi";
 import { ChainlinkV3OracleAbi } from "./abis/ChainlinkV3OracleAbi";
 import { Erc20Abi } from "./abis/Erc20Abi";
+import { Erc20BytesAbi } from "./abis/Erc20BytesAbi";
+import { SiloConfigAbi } from "./abis/SiloConfigAbi";
 
 export default createConfig({
   networks: {
@@ -100,15 +102,15 @@ export default createConfig({
       },
     },
     Silo: {
-      abi: SiloAbi,
+      abi: SiloConfigAbi,
       network: {
         sonic: {
           address: factory({
             address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
             event: parseAbiItem(
-              "event NewSilo(address silo, address config, address implementation, address market1, address market2)"
+              "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
             ),
-            parameter: "silo",
+            parameter: "siloConfig",
           }),
           startBlock: 2550467,
         },
@@ -116,7 +118,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xf7dc975C96B434D436b9bF45E7a45c95F0521442",
         //     event: parseAbiItem(
-        //       "event NewSilo(address silo, address config, address implementation, address market1, address market2)"
+        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -126,7 +128,77 @@ export default createConfig({
         //   address: factory({
         //     address: "0xB25255036f210D7E32FC96e25460aB121FF0C25d",
         //     event: parseAbiItem(
-        //       "event NewSilo(address silo, address config, address implementation, address market1, address market2)"
+        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //     ),
+        //     parameter: "silo",
+        //   }),
+        //   startBlock: 127347200,
+        // },
+      },
+    },
+    Market1: {
+      abi: mergeAbis([SiloAbi, Erc20Abi, Erc20BytesAbi]),
+      network: {
+        sonic: {
+          address: factory({
+            address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
+            event: parseAbiItem(
+              "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+            ),
+            parameter: "silo0",
+          }),
+          startBlock: 2550467,
+        },
+        // arbitrum: {
+        //   address: factory({
+        //     address: "0xf7dc975C96B434D436b9bF45E7a45c95F0521442",
+        //     event: parseAbiItem(
+        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //     ),
+        //     parameter: "silo",
+        //   }),
+        //   startBlock: 283921533,
+        // },
+        // optimism: {
+        //   address: factory({
+        //     address: "0xB25255036f210D7E32FC96e25460aB121FF0C25d",
+        //     event: parseAbiItem(
+        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //     ),
+        //     parameter: "silo",
+        //   }),
+        //   startBlock: 127347200,
+        // },
+      },
+    },
+    Market2: {
+      abi: mergeAbis([SiloAbi, Erc20Abi, Erc20BytesAbi]),
+      network: {
+        sonic: {
+          address: factory({
+            address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
+            event: parseAbiItem(
+              "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+            ),
+            parameter: "silo1",
+          }),
+          startBlock: 2550467,
+        },
+        // arbitrum: {
+        //   address: factory({
+        //     address: "0xf7dc975C96B434D436b9bF45E7a45c95F0521442",
+        //     event: parseAbiItem(
+        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //     ),
+        //     parameter: "silo",
+        //   }),
+        //   startBlock: 283921533,
+        // },
+        // optimism: {
+        //   address: factory({
+        //     address: "0xB25255036f210D7E32FC96e25460aB121FF0C25d",
+        //     event: parseAbiItem(
+        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -183,36 +255,6 @@ export default createConfig({
         //   address: "0xed25Da94B2D2E1a039233Dc621dC811Bd9DF15bF",
         //   startBlock: 127347200,
         // },
-      },
-    },
-    Erc20: {
-      abi: Erc20Abi,
-      network: {
-        sonic: {
-          address: factory({
-            address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
-            event: parseAbiItem(
-              "event NewSilo(address silo, address config, address implementation, address market1, address market2)"
-            ),
-            parameter: "market1",
-          }),
-          startBlock: 2550467,
-        },
-      },
-    },
-    Erc20Market2: {
-      abi: Erc20Abi,
-      network: {
-        sonic: {
-          address: factory({
-            address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
-            event: parseAbiItem(
-              "event NewSilo(address silo, address config, address implementation, address market1, address market2)"
-            ),
-            parameter: "market2",
-          }),
-          startBlock: 2550467,
-        },
       },
     },
   },

@@ -18,7 +18,7 @@ import {
   getOrCreateAccount,
 } from "../utils/helpers";
 
-ponder.on("Silo:Deposit", async ({ event, context }) => {
+ponder.on("Market1:Deposit", async ({ event, context }) => {
   const { db } = context;
   const chainId = context.network.chainId;
   const depositId = createEventId(event.log, event.transaction, chainId);
@@ -59,7 +59,7 @@ ponder.on("Silo:Deposit", async ({ event, context }) => {
   });
 });
 
-ponder.on("Silo:Borrow", async ({ event, context }) => {
+ponder.on("Market1:Borrow", async ({ event, context }) => {
   const { db } = context;
   const chainId = context.network.chainId;
   const borrowId = createEventId(event.log, event.transaction, chainId);
@@ -106,7 +106,7 @@ ponder.on("Silo:Borrow", async ({ event, context }) => {
   }
 });
 
-ponder.on("Silo:Repay", async ({ event, context }) => {
+ponder.on("Market1:Repay", async ({ event, context }) => {
   const { db } = context;
   const chainId = context.network.chainId;
   const repayId = createEventId(event.log, event.transaction, chainId);
@@ -144,7 +144,7 @@ ponder.on("Silo:Repay", async ({ event, context }) => {
   });
 });
 
-ponder.on("Silo:Withdraw", async ({ event, context }) => {
+ponder.on("Market1:Withdraw", async ({ event, context }) => {
   const { db } = context;
   const chainId = context.network.chainId;
   const withdrawId = createEventId(event.log, event.transaction, chainId);
@@ -183,7 +183,7 @@ ponder.on("Silo:Withdraw", async ({ event, context }) => {
   });
 });
 
-ponder.on("Silo:AccruedInterest", async ({ event, context }) => {
+ponder.on("Market1:AccruedInterest", async ({ event, context }) => {
   const { db } = context;
   const chainId = context.network.chainId;
 
