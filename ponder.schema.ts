@@ -130,7 +130,6 @@ export const marketRelations = relations(Market, ({ one, many }) => ({
     references: [Silo.id],
   }),
   positions: many(Position),
-  interestRates: many(InterestRate),
   sToken: one(Token, {
     fields: [Market.sTokenId],
     references: [Token.id],
@@ -150,115 +149,6 @@ export const marketRelations = relations(Market, ({ one, many }) => ({
 }));
 
 /* =====================================================
-   INTEREST RATE TABLES
-   ===================================================== */
-
-export const InterestRateModelConfig = onchainTable(
-  "InterestRateModelConfig",
-  (t) => ({
-    id: t.text().primaryKey(),
-    chainId: t.integer().notNull(),
-    config: t.hex().notNull(),
-    modelVersion: t.integer().notNull(),
-    createdBlockNumber: t.bigint().notNull(),
-  }),
-  (table) => ({
-    chainIdx: index().on(table.chainId),
-  })
-);
-
-export const InterestRate = onchainTable(
-  "InterestRate",
-  (t) => ({
-    id: t.text().primaryKey(),
-    chainId: t.integer().notNull(),
-    rate: t.numeric().notNull().default("0"),
-    side: t.text().notNull(),
-    type: t.text().notNull(),
-    siloId: t.text().notNull(),
-    marketId: t.text().notNull(),
-    tokenId: t.text().notNull(),
-    uopt: t.bigint().notNull(),
-    ucrit: t.bigint().notNull(),
-    ulow: t.bigint().notNull(),
-    ki: t.bigint().notNull(),
-    kcrit: t.bigint().notNull(),
-    klow: t.bigint().notNull(),
-    klin: t.bigint().notNull(),
-    beta: t.bigint().notNull(),
-    ri: t.bigint().notNull(),
-    Tcrit: t.bigint().notNull(),
-    utilization: t.numeric().notNull().default("0"),
-  }),
-  (table) => ({
-    marketIdx: index().on(table.marketId),
-    siloIdx: index().on(table.siloId),
-    chainIdx: index().on(table.chainId),
-  })
-);
-
-export const interestRateRelations = relations(InterestRate, ({ one }) => ({
-  market: one(Market, {
-    fields: [InterestRate.marketId],
-    references: [Market.id],
-  }),
-  silo: one(Silo, {
-    fields: [InterestRate.siloId],
-    references: [Silo.id],
-  }),
-}));
-
-// NEW: Hourly timeseries table for interest rates
-export const InterestRateHourly = onchainTable(
-  "InterestRateHourly",
-  (t) => ({
-    id: t.text().primaryKey(),
-    chainId: t.integer().notNull(),
-    hour: t.integer().notNull(), // hour bucket (e.g. hours since Unix epoch)
-    timestamp: t.bigint().notNull(), // start-of-hour timestamp
-    interestRateId: t.text().notNull(),
-    ri: t.bigint(), // optional: initial integrator value
-    Tcrit: t.bigint(), // optional: critical time threshold
-    utilization: t.numeric(), // utilization as a numeric value
-    rateLast: t.numeric().notNull(),
-    rateHigh: t.numeric().notNull(),
-    rateLow: t.numeric().notNull(),
-    rateAvg: t.numeric().notNull(),
-    rateSum: t.numeric().notNull(),
-    rateCount: t.integer().notNull(),
-  }),
-  (table) => ({
-    interestRateIdx: index().on(table.interestRateId),
-    chainIdx: index().on(table.chainId),
-  })
-);
-
-// NEW: Daily timeseries table for interest rates
-export const InterestRateDaily = onchainTable(
-  "InterestRateDaily",
-  (t) => ({
-    id: t.text().primaryKey(),
-    chainId: t.integer().notNull(),
-    day: t.integer().notNull(), // day bucket (e.g. days since Unix epoch)
-    timestamp: t.bigint().notNull(), // start-of-day timestamp
-    interestRateId: t.text().notNull(),
-    ri: t.bigint(),
-    Tcrit: t.bigint(),
-    utilization: t.numeric(),
-    rateLast: t.numeric().notNull(),
-    rateHigh: t.numeric().notNull(),
-    rateLow: t.numeric().notNull(),
-    rateAvg: t.numeric().notNull(),
-    rateSum: t.numeric().notNull(),
-    rateCount: t.integer().notNull(),
-  }),
-  (table) => ({
-    interestRateIdx: index().on(table.interestRateId),
-    chainIdx: index().on(table.chainId),
-  })
-);
-
-/* =====================================================
    ACCOUNT AND POSITION TABLES
    ===================================================== */
 
@@ -270,10 +160,10 @@ export const Account = onchainTable(
     positionCount: t.integer(),
     openPositionCount: t.integer(),
     closedPositionCount: t.integer(),
-    depositCount: t.integer().notNull().default(0),
-    withdrawCount: t.integer().notNull().default(0),
-    borrowCount: t.integer().notNull().default(0),
-    repayCount: t.integer().notNull().default(0),
+    depositCount: t.integer(),
+    withdrawCount: t.integer(),
+    borrowCount: t.integer(),
+    repayCount: t.integer(),
     liquidateCount: t.integer(),
     liquidationCount: t.integer(),
   }),
@@ -284,6 +174,10 @@ export const Account = onchainTable(
 
 export const accountRelations = relations(Account, ({ many }) => ({
   positions: many(Position),
+  deposits: many(Deposit),
+  withdraws: many(Withdraw),
+  borrows: many(Borrow),
+  repays: many(Repay),
 }));
 
 export const Position = onchainTable(
@@ -292,22 +186,9 @@ export const Position = onchainTable(
     id: t.text().primaryKey(),
     accountId: t.text().notNull(),
     marketId: t.text().notNull(),
-    hashOpened: t.hex().notNull(),
-    hashClosed: t.hex(),
-    blockNumberOpened: t.bigint().notNull(),
-    timestampOpened: t.bigint().notNull(),
-    blockNumberClosed: t.bigint(),
-    timestampClosed: t.bigint(),
-    side: t.text().notNull(),
-    isCollateral: t.boolean().notNull(),
     sTokenBalance: t.bigint().notNull().default(0n),
     spTokenBalance: t.bigint().notNull().default(0n),
     dTokenBalance: t.bigint().notNull().default(0n),
-    depositCount: t.integer().notNull().default(0),
-    withdrawCount: t.integer().notNull().default(0),
-    borrowCount: t.integer().notNull().default(0),
-    repayCount: t.integer().notNull().default(0),
-    liquidationCount: t.integer().notNull().default(0),
   }),
   (table) => ({
     accountIdx: index().on(table.accountId),
@@ -336,31 +217,6 @@ export const Token = onchainTable("Token", (t) => ({
   symbol: t.text().notNull(),
   decimals: t.integer().notNull(),
 }));
-
-/* =====================================================
-   ORACLE TABLE
-   ===================================================== */
-
-export const Oracle = onchainTable(
-  "Oracle",
-  (t) => ({
-    id: t.text().primaryKey(),
-    chainId: t.integer().notNull(),
-    type: t.text().notNull(),
-    primaryPool: t.hex().notNull(),
-    secondaryPool: t.hex(),
-    baseTokenId: t.text().notNull(),
-    quoteTokenId: t.text().notNull(),
-    name: t.text().notNull(),
-    timestamp: t.bigint().notNull(),
-    blockNumber: t.bigint().notNull(),
-  }),
-  (table) => ({
-    baseTokenIdx: index().on(table.baseTokenId),
-    quoteTokenIdx: index().on(table.quoteTokenId),
-    chainIdx: index().on(table.chainId),
-  })
-);
 
 /* =====================================================
    LIQUIDATION TABLE
@@ -557,81 +413,36 @@ export const Gauge = onchainTable(
   (t) => ({
     id: t.text().primaryKey(),
     chainId: t.integer().notNull(),
-    siloId: t.text().notNull(),
     marketId: t.text().notNull(),
-    weight: t.bigint().notNull(),
-    lastUpdated: t.bigint().notNull(),
   }),
   (table) => ({
-    siloIdx: index().on(table.siloId),
     marketIdx: index().on(table.marketId),
     chainIdx: index().on(table.chainId),
   })
 );
 
-export const gaugeRelations = relations(Gauge, ({ one }) => ({
-  silo: one(Silo, { fields: [Gauge.siloId], references: [Silo.id] }),
+export const gaugeRelations = relations(Gauge, ({ one, many }) => ({
   market: one(Market, { fields: [Gauge.marketId], references: [Market.id] }),
+  gaugeRelations: many(Program),
 }));
 
-/* =====================================================
-   PRICE FEED TABLE
-   ===================================================== */
+export const Program = onchainTable("Program", (t) => ({
+  id: t.text().primaryKey(),
+  chainId: t.integer().notNull(),
+  gaugeId: t.text().notNull(),
+  name: t.text().notNull(),
+  rewardTokenId: t.text().notNull(),
+  distributionEnd: t.bigint().notNull(),
+  createdAt: t.bigint().notNull(),
+  updatedAt: t.bigint().notNull(),
+  emissionPerSecond: t.bigint().notNull(),
+  index: t.bigint().notNull(),
+}));
 
-export const PriceFeed = onchainTable(
-  "PriceFeed",
-  (t) => ({
-    id: t.text().primaryKey(),
-    token: t.text().notNull(),
-    price: t.numeric().notNull(),
-    timestamp: t.bigint().notNull(),
+export const programRelations = relations(Program, ({ one }) => ({
+  gauge: one(Gauge, { fields: [Program.gaugeId], references: [Gauge.id] }),
+  token: one(Token, {
+    fields: [Program.rewardTokenId],
+    references: [Token.id],
   }),
-  (table) => ({
-    tokenIdx: index().on(table.token),
-    timestampIdx: index().on(table.timestamp),
-  })
-);
-
-/* =====================================================
-   POSITION SNAPSHOT TABLE
-   ===================================================== */
-
-export const PositionSnapshot = onchainTable(
-  "PositionSnapshot",
-  (t) => ({
-    id: t.text().primaryKey(),
-    hash: t.text().notNull(),
-    logIndex: t.integer().notNull(),
-    nonce: t.bigint().notNull(),
-    blockNumber: t.bigint().notNull(),
-    timestamp: t.bigint().notNull(),
-    account: t.text().notNull(),
-    market: t.text().notNull(),
-    position: t.text().notNull(),
-    balance: t.bigint().notNull(),
-    side: t.text().notNull(),
-  }),
-  (table) => ({
-    positionIdx: index().on(table.position),
-    marketIdx: index().on(table.market),
-    accountIdx: index().on(table.account),
-  })
-);
-
-export const positionSnapshotRelations = relations(
-  PositionSnapshot,
-  ({ one }) => ({
-    account: one(Account, {
-      fields: [PositionSnapshot.account],
-      references: [Account.id],
-    }),
-    market: one(Market, {
-      fields: [PositionSnapshot.market],
-      references: [Market.id],
-    }),
-    position: one(Position, {
-      fields: [PositionSnapshot.position],
-      references: [Position.id],
-    }),
-  })
-);
+}));
