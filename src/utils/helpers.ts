@@ -1,7 +1,7 @@
 // silo-v2/src/utils/helpers.ts
 import { Log, Transaction } from "ponder";
 import { type Context } from "ponder:registry";
-import { Account, Token } from "ponder:schema";
+import { Account, Token, Position } from "ponder:schema";
 import { Address, erc20Abi } from "viem";
 
 // Create an array with a default value
@@ -14,7 +14,7 @@ export function buildArray(
 
 // Helper to create chain-specific IDs
 export function createChainId(chainId: number | string): string {
-  return `chain-${chainId}`;
+  return `${chainId}`;
 }
 
 // Create unique IDs for events that include chain information
@@ -23,7 +23,7 @@ export function createEventId(
   tx: Transaction,
   chainId: number | string
 ): string {
-  return `${createChainId(chainId)}-${tx.hash}-${log.logIndex}`;
+  return `-${tx.hash}-${log.logIndex}-${chainId}`;
 }
 
 // Create unique entity IDs that include chain information
@@ -31,7 +31,19 @@ export function createEntityId(
   address: string,
   chainId: number | string
 ): string {
-  return `${createChainId(chainId)}-${address.toLowerCase()}`;
+  return `${address.toLowerCase()}-${chainId}`;
+}
+
+export function createPositionId(
+  marketId: string,
+  accountId: string,
+  chainId: number | string
+): string {
+  return `${accountId}-${marketId}-${chainId}`;
+}
+
+export function createProgramId(gaugeId: string, programName: string): string {
+  return `${gaugeId}-${programName}`;
 }
 
 /**
@@ -108,7 +120,7 @@ export async function getOrCreateToken(
     ],
   });
 
-  if (tokenData.some((data) => data === null) || tokenData.length !== 3) {
+  if (tokenData.some((data) => data === null)) {
     throw new Error(`Failed to fetch token data for ${address}`);
   }
 
@@ -119,4 +131,27 @@ export async function getOrCreateToken(
     decimals: tokenData[1].result as number,
     name: tokenData[2].result as string,
   });
+}
+
+export async function insertOrUpdatePosition(
+  context: Context,
+  params: Omit<typeof Position.$inferInsert, "id">
+) {
+  const id = createPositionId(
+    params.marketId,
+    params.accountId,
+    context.network.chainId
+  );
+
+  return await context.db
+    .insert(Position)
+    .values({
+      id,
+      ...params,
+    })
+    .onConflictDoUpdate(({ spTokenBalance, sTokenBalance, dTokenBalance }) => ({
+      spTokenBalance: spTokenBalance + (params.spTokenBalance || 0n),
+      sTokenBalance: sTokenBalance + (params.sTokenBalance || 0n),
+      dTokenBalance: dTokenBalance + (params.dTokenBalance || 0n),
+    }));
 }
