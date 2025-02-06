@@ -9,8 +9,6 @@ import { ChainlinkV3OracleFactoryAbi } from "./abis/ChainlinkV3OracleFactoryAbi"
 import { GaugeHookReceiverAbi } from "./abis/GaugeHookReceiverAbi";
 import { SiloAbi } from "./abis/SiloAbi";
 import { InterestRateModelV2Abi } from "./abis/InterestRateModelV2Abi";
-import { UniswapV3OracleAbi } from "./abis/UniswapV3OracleAbi";
-import { ChainlinkV3OracleAbi } from "./abis/ChainlinkV3OracleAbi";
 import { Erc20Abi } from "./abis/Erc20Abi";
 import { Erc20BytesAbi } from "./abis/Erc20BytesAbi";
 import { SiloConfigAbi } from "./abis/SiloConfigAbi";
@@ -19,8 +17,7 @@ export default createConfig({
   networks: {
     sonic: {
       chainId: 146,
-      transport: http("https://sonic-rpc.publicnode.com"),
-      // transport: http(process.env.PONDER_RPC_URL_42220),
+      transport: http(process.env.SONIC_RPC_URL),
     },
     // arbitrum: {
     //   chainId: 42161,
@@ -108,7 +105,7 @@ export default createConfig({
           address: factory({
             address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
             event: parseAbiItem(
-              "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+              "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
             ),
             parameter: "siloConfig",
           }),
@@ -118,7 +115,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xf7dc975C96B434D436b9bF45E7a45c95F0521442",
         //     event: parseAbiItem(
-        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //       "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -128,7 +125,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xB25255036f210D7E32FC96e25460aB121FF0C25d",
         //     event: parseAbiItem(
-        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //       "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -143,7 +140,7 @@ export default createConfig({
           address: factory({
             address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
             event: parseAbiItem(
-              "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+              "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
             ),
             parameter: "silo0",
           }),
@@ -153,7 +150,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xf7dc975C96B434D436b9bF45E7a45c95F0521442",
         //     event: parseAbiItem(
-        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //       "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -163,7 +160,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xB25255036f210D7E32FC96e25460aB121FF0C25d",
         //     event: parseAbiItem(
-        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //       "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -178,7 +175,7 @@ export default createConfig({
           address: factory({
             address: "0xa42001D6d2237d2c74108FE360403C4b796B7170",
             event: parseAbiItem(
-              "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+              "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
             ),
             parameter: "silo1",
           }),
@@ -188,7 +185,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xf7dc975C96B434D436b9bF45E7a45c95F0521442",
         //     event: parseAbiItem(
-        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //       "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
@@ -198,7 +195,7 @@ export default createConfig({
         //   address: factory({
         //     address: "0xB25255036f210D7E32FC96e25460aB121FF0C25d",
         //     event: parseAbiItem(
-        //       "event NewSilo(address token0, address token1, address silo0, address silo1, address siloConfig)"
+        //       "event NewSilo(address indexed implementation, address indexed token0, address indexed token1, address silo0, address silo1, address siloConfig)"
         //     ),
         //     parameter: "silo",
         //   }),
