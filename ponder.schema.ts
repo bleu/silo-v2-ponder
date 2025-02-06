@@ -1,4 +1,5 @@
 import { onchainTable, relations, index, primaryKey, sql } from "ponder";
+import { parseEther } from "viem";
 
 /* =====================================================
    PROTOCOL LEVEL TABLES
@@ -9,26 +10,26 @@ export const LendingProtocol = onchainTable(
   (t) => ({
     id: t.text().primaryKey(),
     chainId: t.integer().notNull(),
-    name: t.text().notNull(),
-    slug: t.text().notNull(),
-    schemaVersion: t.text().notNull(),
-    subgraphVersion: t.text().notNull(),
-    methodologyVersion: t.text().notNull(),
-    network: t.text().notNull(),
-    type: t.text().notNull(),
-    lendingType: t.text().notNull(),
-    riskType: t.text().notNull(),
+    name: t.text(),
+    slug: t.text(),
+    schemaVersion: t.text(),
+    subgraphVersion: t.text(),
+    methodologyVersion: t.text(),
+    network: t.text(),
+    type: t.text(),
+    lendingType: t.text(),
+    riskType: t.text(),
     totalPoolCount: t.integer().notNull().default(0),
-    cumulativeUniqueUsers: t.integer().notNull().default(0),
-    cumulativeUniqueDeployers: t.integer().notNull().default(0),
-    cumulativeUniqueDepositors: t.integer().notNull().default(0),
-    cumulativeUniqueBorrowers: t.integer().notNull().default(0),
-    minDaoFee: t.bigint().notNull(),
-    maxDaoFee: t.bigint().notNull(),
-    daoFeeReceiver: t.text().notNull(),
-    maxLiquidationFee: t.bigint().notNull(),
-    maxFlashloanFee: t.bigint().notNull(),
-    maxDeployerFee: t.bigint().notNull(),
+    cumulativeUniqueUsers: t.integer(),
+    cumulativeUniqueDeployers: t.integer(),
+    cumulativeUniqueDepositors: t.integer(),
+    cumulativeUniqueBorrowers: t.integer(),
+    minDaoFee: t.bigint(),
+    maxDaoFee: t.bigint(),
+    daoFeeReceiver: t.text(),
+    maxLiquidationFee: t.bigint(),
+    maxFlashloanFee: t.bigint(),
+    maxDeployerFee: t.bigint(),
     gaugeHookAddress: t.hex(),
     gaugeHookInitialized: t.boolean().notNull().default(false),
     gaugeHookInitializedAt: t.bigint(),
@@ -56,7 +57,7 @@ export const Silo = onchainTable(
   (t) => ({
     id: t.text().primaryKey(),
     chainId: t.integer().notNull(),
-    name: t.text().notNull(),
+    name: t.text(),
     protocolId: t.text().notNull(),
     asset1Id: t.text().notNull(),
     asset2Id: t.text().notNull(),
@@ -64,16 +65,17 @@ export const Silo = onchainTable(
     market2Id: t.text().notNull(),
     configAddress: t.hex().notNull(),
     siloId: t.bigint().notNull(),
-    daoFee: t.bigint().notNull(),
-    deployerFee: t.bigint().notNull(),
+    // TODO: change this to notNull() after fixing the issue with the factory
+    daoFee: t.bigint(),
+    deployerFee: t.bigint(),
     createdTimestamp: t.bigint().notNull(),
-    deployerId: t.hex().notNull(),
+    deployer: t.hex().notNull(),
     implementation: t.hex().notNull(),
     interestLastUpdated: t.bigint().notNull(),
   }),
   (table) => ({
     protocolIdx: index().on(table.protocolId),
-    deployerIdx: index().on(table.deployerId),
+    deployerIdx: index().on(table.deployer),
     chainIdx: index().on(table.chainId),
   })
 );
@@ -92,29 +94,29 @@ export const Market = onchainTable(
     id: t.text().primaryKey(),
     protocolId: t.text().notNull(),
     siloId: t.text().notNull(),
-    name: t.text().notNull(),
+    name: t.text(),
     inputTokenId: t.text().notNull(),
-    otherMarketId: t.text(),
+    otherMarketId: t.text().notNull(),
     sTokenId: t.text().notNull(),
-    spTokenId: t.text().notNull(),
-    dTokenId: t.text().notNull(),
+    spTokenId: t.text(),
+    dTokenId: t.text(),
     createdTimestamp: t.bigint().notNull(),
     createdBlockNumber: t.bigint().notNull(),
-    flashLoanFee: t.bigint().notNull(),
-    liquidationFee: t.bigint().notNull(),
-    liquidationTargetLtv: t.bigint().notNull(),
-    solvencyOracleAddress: t.hex().notNull(),
-    maxLtvOracleAddress: t.hex().notNull(),
-    interestRateModel: t.hex().notNull(),
-    maxLtv: t.bigint().notNull(),
-    lt: t.bigint().notNull(),
+    flashLoanFee: t.bigint(),
+    liquidationFee: t.bigint(),
+    liquidationTargetLtv: t.bigint(),
+    solvencyOracleAddress: t.hex(),
+    maxLtvOracleAddress: t.hex(),
+    interestRateModel: t.hex(),
+    maxLtv: t.bigint(),
+    lt: t.bigint(),
     collateralSupply: t.bigint().notNull().default(0n),
     protectedSupply: t.bigint().notNull().default(0n),
     totalSupply: t.bigint().notNull().default(0n),
     balance: t.bigint().notNull().default(0n),
     borrowed: t.bigint().notNull().default(0n),
-    supplyIndex: t.numeric().notNull(),
-    borrowIndex: t.numeric().notNull(),
+    supplyIndex: t.bigint().notNull().default(parseEther("1")),
+    borrowIndex: t.bigint().notNull().default(parseEther("1")),
   }),
   (table) => ({
     siloIdx: index().on(table.siloId),
@@ -129,6 +131,22 @@ export const marketRelations = relations(Market, ({ one, many }) => ({
   }),
   positions: many(Position),
   interestRates: many(InterestRate),
+  sToken: one(Token, {
+    fields: [Market.sTokenId],
+    references: [Token.id],
+  }),
+  spToken: one(Token, {
+    fields: [Market.spTokenId],
+    references: [Token.id],
+  }),
+  dToken: one(Token, {
+    fields: [Market.dTokenId],
+    references: [Token.id],
+  }),
+  inputToken: one(Token, {
+    fields: [Market.inputTokenId],
+    references: [Token.id],
+  }),
 }));
 
 /* =====================================================
@@ -247,17 +265,17 @@ export const InterestRateDaily = onchainTable(
 export const Account = onchainTable(
   "Account",
   (t) => ({
-    id: t.hex().primaryKey(),
+    id: t.text().primaryKey(),
     chainId: t.integer().notNull(),
-    positionCount: t.integer().notNull().default(0),
-    openPositionCount: t.integer().notNull().default(0),
-    closedPositionCount: t.integer().notNull().default(0),
+    positionCount: t.integer(),
+    openPositionCount: t.integer(),
+    closedPositionCount: t.integer(),
     depositCount: t.integer().notNull().default(0),
     withdrawCount: t.integer().notNull().default(0),
     borrowCount: t.integer().notNull().default(0),
     repayCount: t.integer().notNull().default(0),
-    liquidateCount: t.integer().notNull().default(0),
-    liquidationCount: t.integer().notNull().default(0),
+    liquidateCount: t.integer(),
+    liquidationCount: t.integer(),
   }),
   (table) => ({
     chainIdx: index().on(table.chainId),
@@ -272,7 +290,7 @@ export const Position = onchainTable(
   "Position",
   (t) => ({
     id: t.text().primaryKey(),
-    accountId: t.hex().notNull(),
+    accountId: t.text().notNull(),
     marketId: t.text().notNull(),
     hashOpened: t.hex().notNull(),
     hashClosed: t.hex(),
@@ -312,33 +330,11 @@ export const positionRelations = relations(Position, ({ one }) => ({
    TOKEN TABLES
    ===================================================== */
 
-export const Token = onchainTable(
-  "Token",
-  (t) => ({
-    id: t.text().primaryKey(),
-    name: t.text().notNull(),
-    symbol: t.text().notNull(),
-    decimals: t.integer().notNull(),
-    type: t.text().notNull(),
-    siloId: t.text().notNull(),
-    marketId: t.text().notNull(),
-    assetId: t.text().notNull(),
-    protocolId: t.text().notNull(),
-  }),
-  (table) => ({
-    siloIdx: index().on(table.siloId),
-    marketIdx: index().on(table.marketId),
-    protocolIdx: index().on(table.protocolId),
-  })
-);
-
-export const tokenRelations = relations(Token, ({ one }) => ({
-  silo: one(Silo, { fields: [Token.siloId], references: [Silo.id] }),
-  market: one(Market, { fields: [Token.marketId], references: [Market.id] }),
-  protocol: one(LendingProtocol, {
-    fields: [Token.protocolId],
-    references: [LendingProtocol.id],
-  }),
+export const Token = onchainTable("Token", (t) => ({
+  id: t.text().primaryKey(),
+  name: t.text().notNull(),
+  symbol: t.text().notNull(),
+  decimals: t.integer().notNull(),
 }));
 
 /* =====================================================
@@ -380,13 +376,13 @@ export const Liquidation = onchainTable(
     logIndex: t.integer().notNull(),
     blockNumber: t.bigint().notNull(),
     timestamp: t.bigint().notNull(),
-    accountId: t.hex().notNull(),
+    accountId: t.text().notNull(),
     marketId: t.text().notNull(),
     amount: t.bigint().notNull(),
     amountUSD: t.numeric().notNull(),
     profit: t.bigint().notNull(), // NEW: raw profit value from liquidation
     profitUSD: t.numeric().notNull(),
-    liquidatorId: t.hex().notNull(),
+    liquidatorId: t.text().notNull(),
     positionId: t.text().notNull(),
   }),
   (table) => ({
@@ -417,7 +413,7 @@ export const liquidationRelations = relations(Liquidation, ({ one }) => ({
    TRANSACTION EVENT TABLES
    ===================================================== */
 
-// Deposit Event Table – NEW fields: senderId and amountUSD
+// Deposit Event Table – NEW fields: sender and amountUSD
 export const Deposit = onchainTable(
   "Deposit",
   (t) => ({
@@ -428,8 +424,8 @@ export const Deposit = onchainTable(
     logIndex: t.integer().notNull(),
     blockNumber: t.bigint().notNull(),
     timestamp: t.bigint().notNull(),
-    accountId: t.hex().notNull(),
-    senderId: t.hex().notNull(), // NEW: account that initiated the deposit
+    accountId: t.text().notNull(),
+    sender: t.hex().notNull(), // NEW: account that initiated the deposit
     marketId: t.text().notNull(),
     amount: t.bigint().notNull(),
     amountUSD: t.numeric().notNull(), // NEW: deposit amount in USD
@@ -438,7 +434,7 @@ export const Deposit = onchainTable(
   }),
   (table) => ({
     accountIdx: index().on(table.accountId),
-    senderIdx: index().on(table.senderId),
+    senderIdx: index().on(table.sender),
     marketIdx: index().on(table.marketId),
     chainIdx: index().on(table.chainId),
   })
@@ -463,7 +459,7 @@ export const Withdraw = onchainTable(
     logIndex: t.integer().notNull(),
     blockNumber: t.bigint().notNull(),
     timestamp: t.bigint().notNull(),
-    accountId: t.hex().notNull(),
+    accountId: t.text().notNull(),
     marketId: t.text().notNull(),
     amount: t.bigint().notNull(),
     amountUSD: t.numeric().notNull(), // NEW: withdrawal amount in USD
@@ -485,7 +481,6 @@ export const withdrawRelations = relations(Withdraw, ({ one }) => ({
   market: one(Market, { fields: [Withdraw.marketId], references: [Market.id] }),
 }));
 
-// Borrow Event Table – NEW fields: senderId and amountUSD
 export const Borrow = onchainTable(
   "Borrow",
   (t) => ({
@@ -496,8 +491,8 @@ export const Borrow = onchainTable(
     logIndex: t.integer().notNull(),
     blockNumber: t.bigint().notNull(),
     timestamp: t.bigint().notNull(),
-    accountId: t.hex().notNull(),
-    senderId: t.hex().notNull(), // NEW: account initiating the borrow
+    accountId: t.text().notNull(),
+    sender: t.hex().notNull(),
     marketId: t.text().notNull(),
     amount: t.bigint().notNull(),
     amountUSD: t.numeric().notNull(), // NEW: borrow amount in USD
@@ -505,7 +500,7 @@ export const Borrow = onchainTable(
   }),
   (table) => ({
     accountIdx: index().on(table.accountId),
-    senderIdx: index().on(table.senderId),
+    senderIdx: index().on(table.sender),
     marketIdx: index().on(table.marketId),
     chainIdx: index().on(table.chainId),
   })
@@ -519,7 +514,7 @@ export const borrowRelations = relations(Borrow, ({ one }) => ({
   market: one(Market, { fields: [Borrow.marketId], references: [Market.id] }),
 }));
 
-// Repay Event Table – NEW fields: senderId and amountUSD
+// Repay Event Table – NEW fields: sender and amountUSD
 export const Repay = onchainTable(
   "Repay",
   (t) => ({
@@ -530,8 +525,8 @@ export const Repay = onchainTable(
     logIndex: t.integer().notNull(),
     blockNumber: t.bigint().notNull(),
     timestamp: t.bigint().notNull(),
-    accountId: t.hex().notNull(),
-    senderId: t.hex().notNull(), // NEW: account that initiated the repay
+    accountId: t.text().notNull(),
+    sender: t.hex().notNull(),
     marketId: t.text().notNull(),
     amount: t.bigint().notNull(),
     amountUSD: t.numeric().notNull(), // NEW: repay amount in USD
@@ -539,7 +534,7 @@ export const Repay = onchainTable(
   }),
   (table) => ({
     accountIdx: index().on(table.accountId),
-    senderIdx: index().on(table.senderId),
+    senderIdx: index().on(table.sender),
     marketIdx: index().on(table.marketId),
     chainIdx: index().on(table.chainId),
   })

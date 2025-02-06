@@ -7,67 +7,57 @@ import {
   Gauge,
   LendingProtocol,
 } from "ponder:schema";
-import { getOrCreateAccount, createEntityId } from "../utils/helpers";
+import { createOrUpdateAccount, createEntityId } from "../utils/helpers";
 
-// Define an interface for the expected LiquidationCall event arguments.
-interface LiquidationCallEventArgs {
-  market: string;
-  borrower: string;
-  liquidator: string;
-  seizeAmount: bigint;
-  withdrawCollateral: bigint;
-  // Add additional properties if needed.
-}
+// ponder.on("GaugeHookReceiver:LiquidationCall", async ({ event, context }) => {
+//   const { db } = context;
+//   const chainId = context.network.chainId;
 
-ponder.on("GaugeHookReceiver:LiquidationCall", async ({ event, context }) => {
-  const { db } = context;
-  const chainId = context.network.chainId;
+//   // Cast event.args to our expected interface.
+//   const args = event.args as unknown as LiquidationCallEventArgs;
 
-  // Cast event.args to our expected interface.
-  const args = event.args as unknown as LiquidationCallEventArgs;
+//   // Now we can use args.market, args.borrower, etc.
+//   const liquidationId = createEntityId(
+//     `${event.log.address}-${event.transaction.hash}-${event.log.logIndex}`,
+//     chainId
+//   );
 
-  // Now we can use args.market, args.borrower, etc.
-  const liquidationId = createEntityId(
-    `${event.log.address}-${event.transaction.hash}-${event.log.logIndex}`,
-    chainId
-  );
+//   // Look up the market. (Assuming args.market is the market address.)
+//   const market = await db.find(Market, { id: args.market.toLowerCase() });
+//   if (!market) return;
 
-  // Look up the market. (Assuming args.market is the market address.)
-  const market = await db.find(Market, { id: args.market.toLowerCase() });
-  if (!market) return;
+//   // Get the borrower account.
+//   const borrower = await createOrUpdateAccount(args.borrower, context);
+//   // Get the liquidator account.
+//   const liquidator = await createOrUpdateAccount(args.liquidator, context);
 
-  // Get the borrower account.
-  const borrower = await getOrCreateAccount(args.borrower, context);
-  // Get the liquidator account.
-  const liquidator = await getOrCreateAccount(args.liquidator, context);
+//   // Insert the liquidation record.
+//   await db.insert(Liquidation).values({
+//     id: liquidationId,
+//     chainId,
+//     hash: event.transaction.hash,
+//     nonce: BigInt(event.transaction.nonce),
+//     logIndex: event.log.logIndex,
+//     blockNumber: event.block.number,
+//     timestamp: event.block.timestamp,
+//     accountId: borrower.id,
+//     marketId: market.id,
+//     amount: args.seizeAmount,
+//     amountUSD: "0", // Price conversion to be implemented
+//     profit: BigInt(0), // Provide a default value for the missing property
+//     profitUSD: "0", // Price conversion to be implemented
+//     liquidatorId: liquidator.id,
+//     positionId: `${borrower.id}-${market.id}-BORROWER`,
+//   });
 
-  // Insert the liquidation record.
-  await db.insert(Liquidation).values({
-    id: liquidationId,
-    chainId,
-    hash: event.transaction.hash,
-    nonce: BigInt(event.transaction.nonce),
-    logIndex: event.log.logIndex,
-    blockNumber: event.block.number,
-    timestamp: event.block.timestamp,
-    accountId: borrower.id,
-    marketId: market.id,
-    amount: args.seizeAmount,
-    amountUSD: "0", // Price conversion to be implemented
-    profit: BigInt(0), // Provide a default value for the missing property
-    profitUSD: "0", // Price conversion to be implemented
-    liquidatorId: liquidator.id,
-    positionId: `${borrower.id}-${market.id}-BORROWER`,
-  });
-
-  // Update borrower and liquidator stats.
-  await db.update(Account, { id: borrower.id }).set({
-    liquidationCount: borrower.liquidationCount + 1,
-  });
-  await db.update(Account, { id: liquidator.id }).set({
-    liquidateCount: liquidator.liquidateCount + 1,
-  });
-});
+//   // Update borrower and liquidator stats.
+//   await db.update(Account, { id: borrower.id }).set({
+//     liquidationCount: borrower.liquidationCount + 1,
+//   });
+//   await db.update(Account, { id: liquidator.id }).set({
+//     liquidateCount: liquidator.liquidateCount + 1,
+//   });
+// });
 
 ponder.on("GaugeHookReceiver:GaugeConfigured", async ({ event, context }) => {
   const { db } = context;

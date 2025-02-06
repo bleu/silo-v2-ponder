@@ -2,6 +2,7 @@
 import { Log, Transaction } from "ponder";
 import { type Context } from "ponder:registry";
 import { Account, Token } from "ponder:schema";
+import { Address, erc20Abi } from "viem";
 
 // Create an array with a default value
 export function buildArray(
@@ -13,7 +14,7 @@ export function buildArray(
 
 // Helper to create chain-specific IDs
 export function createChainId(chainId: number | string): string {
-  return `chain_${chainId}`;
+  return `chain-${chainId}`;
 }
 
 // Create unique IDs for events that include chain information
@@ -22,7 +23,7 @@ export function createEventId(
   tx: Transaction,
   chainId: number | string
 ): string {
-  return `${createChainId(chainId)}_${tx.hash}_${log.logIndex}`;
+  return `${createChainId(chainId)}-${tx.hash}-${log.logIndex}`;
 }
 
 // Create unique entity IDs that include chain information
@@ -30,7 +31,7 @@ export function createEntityId(
   address: string,
   chainId: number | string
 ): string {
-  return `${createChainId(chainId)}_${address.toLowerCase()}`;
+  return `${createChainId(chainId)}-${address.toLowerCase()}`;
 }
 
 /**
@@ -54,51 +55,23 @@ export function calculateUsdValue(
   return (amt / divisor) * price;
 }
 
-// Updated getOrCreateToken to handle multi-chain
-export async function getOrCreateToken(address: string, context: Context) {
-  const chainId = context.network.chainId;
-  const tokenId = createEntityId(address, chainId);
-
-  let token = await context.db.find(Token, { id: tokenId });
-  if (token) return token;
-
-  token = await context.db.insert(Token).values({
-    id: tokenId,
-    chainId,
-    name: "", // Optionally, fetch name from the contract
-    symbol: "",
-    decimals: 18,
-    type: "ERC20",
-    siloId: "",
-    marketId: "",
-    assetId: "",
-    protocolId: `silo-finance-${chainId}`,
-  });
-
-  return token;
-}
-
 // Updated getOrCreateAccount to handle multi-chain
-export async function getOrCreateAccount(address: string, context: Context) {
+// TBD: Add update logic
+export async function createOrUpdateAccount(
+  address: string,
+  context: Context
+): Promise<typeof Account.$inferSelect> {
   const chainId = context.network.chainId;
   const accountId = createEntityId(address, chainId) as `0x${string}`;
 
-  const account = await context.db.find(Account, { id: accountId });
-  if (account) return account;
-
-  return await context.db.insert(Account).values({
-    id: accountId,
-    chainId,
-    positionCount: 0,
-    openPositionCount: 0,
-    closedPositionCount: 0,
-    depositCount: 0,
-    withdrawCount: 0,
-    borrowCount: 0,
-    repayCount: 0,
-    liquidateCount: 0,
-    liquidationCount: 0,
-  });
+  // TBD: Change to upsert
+  return await context.db
+    .insert(Account)
+    .values({
+      id: accountId,
+      chainId,
+    })
+    .onConflictDoUpdate({});
 }
 
 // Helper to check if an entity exists (with chain-specific ID)
@@ -113,4 +86,37 @@ export async function checkExistingEntity(
     where: { id: chainSpecificId },
   });
   return entity !== null;
+}
+
+// TODO: On the future we might want to remove this call just for the input token
+export async function getOrCreateToken(
+  address: Address,
+  context: Context
+): Promise<typeof Token.$inferSelect> {
+  const chainId = context.network.chainId;
+  const tokenId = createEntityId(address, chainId);
+
+  const token = await context.db.find(Token, { id: tokenId });
+
+  if (token) return token;
+
+  const tokenData = await context.client.multicall({
+    contracts: [
+      { address, abi: erc20Abi, functionName: "symbol" },
+      { address, abi: erc20Abi, functionName: "decimals" },
+      { address, abi: erc20Abi, functionName: "name" },
+    ],
+  });
+
+  if (tokenData.some((data) => data === null) || tokenData.length !== 3) {
+    throw new Error(`Failed to fetch token data for ${address}`);
+  }
+
+  return await context.db.insert(Token).values({
+    id: tokenId,
+    chainId,
+    symbol: tokenData[0].result as string,
+    decimals: tokenData[1].result as number,
+    name: tokenData[2].result as string,
+  });
 }
