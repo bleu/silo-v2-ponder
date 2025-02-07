@@ -146,6 +146,7 @@ export const marketRelations = relations(Market, ({ one, many }) => ({
     fields: [Market.inputTokenId],
     references: [Token.id],
   }),
+  rewardPrograms: many(RewardProgram),
 }));
 
 /* =====================================================
@@ -408,41 +409,33 @@ export const repayRelations = relations(Repay, ({ one }) => ({
    GAUGE TABLE
    ===================================================== */
 
-export const Gauge = onchainTable(
-  "Gauge",
+export const RewardProgram = onchainTable(
+  "RewardProgram",
   (t) => ({
     id: t.text().primaryKey(),
     chainId: t.integer().notNull(),
     marketId: t.text().notNull(),
+    name: t.text().notNull(),
+    rewardTokenId: t.text().notNull(),
+    distributionEnd: t.bigint().notNull(),
+    createdAt: t.bigint().notNull(),
+    updatedAt: t.bigint().notNull(),
+    emissionPerSecond: t.bigint().notNull(),
+    index: t.bigint().notNull(),
   }),
   (table) => ({
     marketIdx: index().on(table.marketId),
-    chainIdx: index().on(table.chainId),
+    rewardTokenIdx: index().on(table.rewardTokenId),
   })
 );
 
-export const gaugeRelations = relations(Gauge, ({ one, many }) => ({
-  market: one(Market, { fields: [Gauge.marketId], references: [Market.id] }),
-  gaugeRelations: many(Program),
-}));
-
-export const Program = onchainTable("Program", (t) => ({
-  id: t.text().primaryKey(),
-  chainId: t.integer().notNull(),
-  gaugeId: t.text().notNull(),
-  name: t.text().notNull(),
-  rewardTokenId: t.text().notNull(),
-  distributionEnd: t.bigint().notNull(),
-  createdAt: t.bigint().notNull(),
-  updatedAt: t.bigint().notNull(),
-  emissionPerSecond: t.bigint().notNull(),
-  index: t.bigint().notNull(),
-}));
-
-export const programRelations = relations(Program, ({ one }) => ({
-  gauge: one(Gauge, { fields: [Program.gaugeId], references: [Gauge.id] }),
+export const programRelations = relations(RewardProgram, ({ one }) => ({
   token: one(Token, {
-    fields: [Program.rewardTokenId],
+    fields: [RewardProgram.rewardTokenId],
     references: [Token.id],
+  }),
+  market: one(Market, {
+    fields: [RewardProgram.marketId],
+    references: [Market.id],
   }),
 }));

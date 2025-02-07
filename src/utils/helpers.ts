@@ -42,8 +42,8 @@ export function createPositionId(
   return `${accountId}-${marketId}-${chainId}`;
 }
 
-export function createProgramId(gaugeId: string, programName: string): string {
-  return `${gaugeId}-${programName}`;
+export function createProgramId(marketId: string, programName: string): string {
+  return `${marketId}-${programName}`;
 }
 
 /**

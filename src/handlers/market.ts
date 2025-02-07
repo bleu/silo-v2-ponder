@@ -12,7 +12,7 @@ async function marketDepositHandler({
   context,
   event,
 }: {
-  event: Event<"Market1:Deposit"> | Event<"Market1:DepositProtected">;
+  event: Event<"Market1:Deposit" | "Market1:DepositProtected">;
   context: Context;
 }) {
   const { db } = context;
@@ -23,13 +23,28 @@ async function marketDepositHandler({
   const marketId = createEntityId(event.log.address, chainId);
   const accountId = createEntityId(event.args.owner, chainId);
 
-  const depositBalance =
+  const userDepositBalance =
     event.name === "DepositProtected"
       ? {
           psTokenBalance: event.args.shares,
         }
       : {
           sTokenBalance: event.args.shares,
+        };
+
+  const marketDepositBalances =
+    event.name === "DepositProtected"
+      ? {
+          protectedShares: event.args.shares,
+          collateralShares: 0n,
+          protectedAssets: event.args.assets,
+          collateralAssets: 0n,
+        }
+      : {
+          protectedShares: 0n,
+          collateralShares: event.args.shares,
+          protectedAssets: 0n,
+          collateralAssets: event.args.assets,
         };
 
   await Promise.all([
@@ -50,15 +65,22 @@ async function marketDepositHandler({
       isProtected: event.name === "DepositProtected",
     }),
     db.update(Market, { id: marketId }).set((market) => ({
-      collateralSupply: market.collateralSupply + event.args.assets,
-      totalSupply: market.totalSupply + event.args.assets,
-      balance: market.balance + event.args.assets,
+      totalAssets: market.totalAssets + event.args.assets,
+      protectedAssets:
+        market.protectedAssets + marketDepositBalances.protectedAssets,
+      collateralAssets:
+        market.collateralAssets + marketDepositBalances.collateralAssets,
+      protectedShares:
+        market.protectedShares + marketDepositBalances.protectedShares,
+      collateralShares:
+        market.collateralShares + marketDepositBalances.collateralShares,
+      totalShares: market.totalShares + event.args.shares,
     })),
     createOrUpdateAccount(event.args.owner, context),
     insertOrUpdatePosition(context, {
       marketId,
       accountId,
-      ...depositBalance,
+      ...userDepositBalance,
     }),
   ]);
 }
@@ -80,7 +102,6 @@ async function marketBorrowHandler({
   await Promise.all([
     db.update(Market, { id: marketId }).set((market) => ({
       borrowed: market.borrowed + event.args.assets,
-      balance: market.balance - event.args.assets,
     })),
     db.insert(Borrow).values({
       id: borrowId,
@@ -123,7 +144,6 @@ async function marketRepayHandler({
   await Promise.all([
     db.update(Market, { id: marketId }).set((market) => ({
       borrowed: market.borrowed - event.args.assets,
-      balance: market.balance + event.args.assets,
     })),
     db.insert(Repay).values({
       id: repayId,
@@ -163,7 +183,7 @@ async function marketWithdrawHandler({
   const marketId = createEntityId(event.log.address, chainId);
   const accountId = createEntityId(event.args.receiver, chainId);
 
-  const withdrawBalance =
+  const userWithdrawBalance =
     event.name === "WithdrawProtected"
       ? {
           psTokenBalance: -event.args.shares,
@@ -172,12 +192,22 @@ async function marketWithdrawHandler({
           sTokenBalance: -event.args.shares,
         };
 
+  const marketWithdrawBalances =
+    event.name === "WithdrawProtected"
+      ? {
+          protectedShares: event.args.shares,
+          collateralShares: 0n,
+          protectedAssets: event.args.assets,
+          collateralAssets: 0n,
+        }
+      : {
+          protectedShares: 0n,
+          collateralShares: event.args.shares,
+          protectedAssets: 0n,
+          collateralAssets: event.args.assets,
+        };
+
   await Promise.all([
-    db.update(Market, { id: marketId }).set((market) => ({
-      collateralSupply: market.collateralSupply - event.args.assets,
-      totalSupply: market.totalSupply - event.args.assets,
-      balance: market.balance - event.args.assets,
-    })),
     db.insert(Withdraw).values({
       id: withdrawId,
       chainId,
@@ -187,17 +217,30 @@ async function marketWithdrawHandler({
       blockNumber: event.block.number,
       timestamp: event.block.timestamp,
       accountId,
+      sender: event.args.sender,
       marketId,
       amount: event.args.assets,
       amountUSD: "0", // Placeholder for amountUSD
       shares: event.args.shares,
       isProtected: event.name === "WithdrawProtected",
     }),
+    db.update(Market, { id: marketId }).set((market) => ({
+      totalAssets: market.totalAssets - event.args.assets,
+      protectedAssets:
+        market.protectedAssets - marketWithdrawBalances.protectedAssets,
+      collateralAssets:
+        market.collateralAssets - marketWithdrawBalances.collateralAssets,
+      protectedShares:
+        market.protectedShares - marketWithdrawBalances.protectedShares,
+      collateralShares:
+        market.collateralShares - marketWithdrawBalances.collateralShares,
+      totalShares: market.totalShares - event.args.shares,
+    })),
     createOrUpdateAccount(event.args.owner, context),
     insertOrUpdatePosition(context, {
       marketId,
       accountId,
-      ...withdrawBalance,
+      ...userWithdrawBalance,
     }),
   ]);
 }
