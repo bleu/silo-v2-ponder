@@ -127,6 +127,7 @@ export async function getOrCreateToken(
   return await context.db.insert(Token).values({
     id: tokenId,
     chainId,
+    address,
     symbol: tokenData[0].result as string,
     decimals: tokenData[1].result as number,
     name: tokenData[2].result as string,

@@ -214,6 +214,8 @@ export const positionRelations = relations(Position, ({ one }) => ({
 
 export const Token = onchainTable("Token", (t) => ({
   id: t.text().primaryKey(),
+  chainId: t.integer().notNull(),
+  address: t.hex().notNull(),
   name: t.text().notNull(),
   symbol: t.text().notNull(),
   decimals: t.integer().notNull(),
