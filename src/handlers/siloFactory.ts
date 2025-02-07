@@ -5,6 +5,7 @@ import {
   createEntityId,
   getOrCreateToken,
 } from "../utils/helpers";
+import { SiloConfigAbi } from "../../abis/SiloConfigAbi";
 
 async function idempotentProtocolCreateOrUpdate(
   { db }: Context,
@@ -28,25 +29,61 @@ ponder.on("SiloFactory:NewSilo", async ({ event, context }) => {
   const { db } = context;
   const chainId = context.network.chainId;
 
-  const protocol = await idempotentProtocolCreateOrUpdate(
-    context,
-    chainId,
-    (record) => ({
-      totalPoolCount: record.totalPoolCount + 1,
-    })
-  );
-
   const siloId = createEntityId(event.args.siloConfig, chainId);
+  const protocolId = createChainId(chainId);
 
   const market0Id = createEntityId(event.args.silo0, chainId);
   const market1Id = createEntityId(event.args.silo1, chainId);
 
+  const [{ result: market0Config }, { result: market1Config }] =
+    await context.client.multicall({
+      contracts: [
+        {
+          address: event.args.siloConfig,
+          abi: SiloConfigAbi,
+          functionName: "getConfig",
+          args: [event.args.silo0],
+        },
+
+        {
+          address: event.args.siloConfig,
+          abi: SiloConfigAbi,
+          functionName: "getConfig",
+          args: [event.args.silo1],
+        },
+      ],
+    });
+
+  if (!market0Config || !market1Config) {
+    console.error(
+      `Could not get market config for Silo ${event.args.silo0}-${event.args.silo1}`
+    );
+    return;
+  }
+
+  const market0TokensId = {
+    inputTokenId: createEntityId(event.args.token0, chainId),
+    sTokenId: market0Id,
+    spTokenId: createEntityId(market0Config.protectedShareToken, chainId),
+    dTokenId: createEntityId(market0Config.debtShareToken, chainId),
+  };
+
+  const market1TokensId = {
+    inputTokenId: createEntityId(event.args.token1, chainId),
+    sTokenId: market1Id,
+    spTokenId: createEntityId(market1Config.protectedShareToken, chainId),
+    dTokenId: createEntityId(market1Config.debtShareToken, chainId),
+  };
+
   await Promise.all([
+    idempotentProtocolCreateOrUpdate(context, chainId, (record) => ({
+      totalPoolCount: record.totalPoolCount + 1,
+    })),
     db.insert(Silo).values({
       id: siloId,
       name: `Silo ${event.args.silo0}-${event.args.silo1}`,
       chainId,
-      protocolId: protocol.id,
+      protocolId: protocolId,
       siloId: BigInt(event.args.silo0),
       configAddress: event.args.siloConfig,
       implementation: event.args.implementation,
@@ -60,26 +97,32 @@ ponder.on("SiloFactory:NewSilo", async ({ event, context }) => {
     }),
     db.insert(Market).values({
       id: market0Id,
-      protocolId: protocol.id,
+      protocolId: protocolId,
       siloId: siloId,
       otherMarketId: market1Id,
-      inputTokenId: createEntityId(event.args.token0, chainId),
-      sTokenId: market0Id,
       createdTimestamp: event.block.timestamp,
       createdBlockNumber: event.block.number,
+      ...market0Config,
+      ...market0TokensId,
     }),
     db.insert(Market).values({
       id: market1Id,
-      protocolId: protocol.id,
+      protocolId: protocolId,
       siloId: siloId,
       otherMarketId: market0Id,
-      inputTokenId: createEntityId(event.args.token1, chainId),
-      sTokenId: market1Id,
       createdTimestamp: event.block.timestamp,
       createdBlockNumber: event.block.number,
+      ...market0Config,
+      ...market1TokensId,
     }),
     getOrCreateToken(event.args.token0, context),
+    getOrCreateToken(event.args.silo0, context),
+    getOrCreateToken(market0Config.protectedShareToken, context),
+    getOrCreateToken(market0Config.debtShareToken, context),
     getOrCreateToken(event.args.token1, context),
+    getOrCreateToken(event.args.silo1, context),
+    getOrCreateToken(market1Config.protectedShareToken, context),
+    getOrCreateToken(market1Config.debtShareToken, context),
   ]);
 });
 

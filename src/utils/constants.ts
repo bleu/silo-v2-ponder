@@ -1,4 +1,5 @@
 export const constants = {
+  YEAR_IN_SECONDS: BigInt(60 * 60 * 24 * 365),
   BIGINT_ZERO: BigInt(0),
   BIGINT_ONE: BigInt(1),
   BIGDECIMAL_ZERO: "0",
