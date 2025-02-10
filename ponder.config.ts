@@ -10,6 +10,9 @@ import { SiloConfigAbi } from "./abis/SiloConfigAbi";
 import { SiloGaugeAbi } from "./abis/SiloGaugeAbi";
 import { SiloGaugeFactoryAbi } from "./abis/SiloGaugeFactoryAbi";
 
+const endBlock = 4663391;
+// const endBlock = undefined;
+
 export default createConfig({
   networks: {
     sonic: {
@@ -26,6 +29,7 @@ export default createConfig({
           startBlock: 2550467,
         },
       },
+      endBlock,
     },
     Silo: {
       abi: SiloConfigAbi,
@@ -41,6 +45,7 @@ export default createConfig({
           startBlock: 2550467,
         },
       },
+      endBlock,
     },
     Market1: {
       abi: mergeAbis([SiloAbi, Erc20Abi, Erc20BytesAbi]),
@@ -56,6 +61,7 @@ export default createConfig({
           startBlock: 2550467,
         },
       },
+      endBlock,
     },
     Market2: {
       abi: mergeAbis([SiloAbi, Erc20Abi, Erc20BytesAbi]),
@@ -71,6 +77,7 @@ export default createConfig({
           startBlock: 2550467,
         },
       },
+      endBlock,
     },
     Gauge: {
       abi: SiloGaugeAbi,
@@ -84,6 +91,7 @@ export default createConfig({
           startBlock: 4428108,
         },
       },
+      endBlock,
     },
     GaugeFactory: {
       abi: SiloGaugeFactoryAbi,
@@ -91,6 +99,18 @@ export default createConfig({
         sonic: {
           address: "0x2b07e8b10293019Cb89410894E62A090a7b5bFE6",
           startBlock: 4428108,
+        },
+      },
+      endBlock,
+    },
+  },
+  blocks: {
+    UpdateMarketPrice: {
+      network: {
+        sonic: {
+          startBlock: 2550467,
+          endBlock,
+          interval: 60 * 60 * 6, // use 6 hours for testing
         },
       },
     },
