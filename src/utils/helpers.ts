@@ -23,7 +23,7 @@ export function createEventId(
   tx: Transaction,
   chainId: number | string
 ): string {
-  return `-${tx.hash}-${log.logIndex}-${chainId}`;
+  return `${tx.hash}-${log.logIndex}-${chainId}`.toLowerCase();
 }
 
 // Create unique entity IDs that include chain information
@@ -31,7 +31,7 @@ export function createEntityId(
   address: string,
   chainId: number | string
 ): string {
-  return `${address.toLowerCase()}-${chainId}`;
+  return `${address}-${chainId}`.toLowerCase();
 }
 
 export function createPositionId(
@@ -39,11 +39,11 @@ export function createPositionId(
   accountId: string,
   chainId: number | string
 ): string {
-  return `${accountId}-${marketId}-${chainId}`;
+  return `${accountId}-${marketId}-${chainId}`.toLowerCase();
 }
 
 export function createProgramId(marketId: string, programName: string): string {
-  return `${marketId}-${programName}`;
+  return `${marketId}-${programName}`.toLowerCase();
 }
 
 /**
