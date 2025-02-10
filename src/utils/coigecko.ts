@@ -1,4 +1,3 @@
-import { Address } from "viem";
 import { sonic } from "viem/chains";
 
 const COINGECKO_BASE_PUBLIC_URL = "https://api.coingecko.com/api/v3/";
@@ -35,5 +34,5 @@ export const getCoingeckoTokenPrice = async (
     Record<string, number>
   >;
   const price = data[contractAddress]?.usd as number;
-  return price;
+  return price || 0;
 };
