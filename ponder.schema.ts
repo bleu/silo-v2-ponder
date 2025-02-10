@@ -59,10 +59,10 @@ export const Silo = onchainTable(
     chainId: t.integer().notNull(),
     name: t.text(),
     protocolId: t.text().notNull(),
+    asset0Id: t.text().notNull(),
     asset1Id: t.text().notNull(),
-    asset2Id: t.text().notNull(),
+    market0Id: t.text().notNull(),
     market1Id: t.text().notNull(),
-    market2Id: t.text().notNull(),
     configAddress: t.hex().notNull(),
     siloId: t.bigint().notNull(),
     createdTimestamp: t.bigint().notNull(),
@@ -83,12 +83,29 @@ export const siloRelations = relations(Silo, ({ one, many }) => ({
     references: [LendingProtocol.id],
   }),
   markets: many(Market),
+  market0: one(Market, {
+    fields: [Silo.market0Id],
+    references: [Market.id],
+  }),
+  market1: one(Market, {
+    fields: [Silo.market1Id],
+    references: [Market.id],
+  }),
+  asset0: one(Token, {
+    fields: [Silo.asset0Id],
+    references: [Token.id],
+  }),
+  asset1: one(Token, {
+    fields: [Silo.asset1Id],
+    references: [Token.id],
+  }),
 }));
 
 export const Market = onchainTable(
   "Market",
   (t) => ({
     id: t.text().primaryKey(),
+    address: t.hex().notNull(),
     protocolId: t.text().notNull(),
     siloId: t.text().notNull(),
     name: t.text(),
