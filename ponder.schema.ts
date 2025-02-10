@@ -138,6 +138,7 @@ export const Market = onchainTable(
     flashloanFee: t.bigint().notNull(),
     hookReceiver: t.hex().notNull(),
     callBeforeQuote: t.boolean().notNull(),
+    inputTokenPrice: t.numeric(),
   }),
   (table) => ({
     siloIdx: index().on(table.siloId),
