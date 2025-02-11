@@ -11,10 +11,10 @@ import { SiloGaugeAbi } from "./abis/SiloGaugeAbi";
 import { SiloGaugeFactoryAbi } from "./abis/SiloGaugeFactoryAbi";
 
 export default createConfig({
-  database: {
-    kind: "postgres",
-    connectionString: process.env.DATABASE_URL,
-  },
+  // database: {
+  //   kind: "postgres",
+  //   connectionString: process.env.DATABASE_URL,
+  // },
   networks: {
     sonic: {
       chainId: 146,
