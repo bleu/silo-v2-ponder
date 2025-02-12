@@ -69,10 +69,7 @@ export function calculateUsdValue(
 
 // Updated getOrCreateAccount to handle multi-chain
 // TBD: Add update logic
-export async function createOrUpdateAccount(
-  address: string,
-  context: Context
-): Promise<typeof Account.$inferSelect> {
+export async function createOrUpdateAccount(address: string, context: Context) {
   const chainId = context.network.chainId;
   const accountId = createEntityId(address, chainId) as `0x${string}`;
 
@@ -83,7 +80,7 @@ export async function createOrUpdateAccount(
       id: accountId,
       chainId,
     })
-    .onConflictDoUpdate({});
+    .onConflictDoNothing();
 }
 
 // Helper to check if an entity exists (with chain-specific ID)
