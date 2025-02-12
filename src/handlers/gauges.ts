@@ -4,7 +4,7 @@ import { Market, RewardProgram } from "ponder:schema";
 import {
   createEntityId,
   createProgramId,
-  getOrCreateToken,
+  createTokenIfNotExists,
 } from "../utils/helpers";
 
 ponder.on("Gauge:IncentivesProgramCreated", async ({ event, context }) => {
@@ -35,19 +35,22 @@ ponder.on("Gauge:IncentivesProgramCreated", async ({ event, context }) => {
   const marketId = createEntityId(marketAddress, chainId);
 
   await Promise.all([
-    context.db.insert(RewardProgram).values({
-      id: createProgramId(marketId, event.args.name),
-      chainId,
-      marketId,
-      name: event.args.name,
-      index: incentivesProgram.index,
-      rewardTokenId: createEntityId(incentivesProgram.rewardToken, chainId),
-      distributionEnd: BigInt(incentivesProgram.distributionEnd),
-      createdAt: event.block.timestamp,
-      updatedAt: event.block.timestamp,
-      emissionPerSecond: incentivesProgram.emissionPerSecond,
-    }),
-    getOrCreateToken(incentivesProgram.rewardToken, context),
+    context.db
+      .insert(RewardProgram)
+      .values({
+        id: createProgramId(marketId, event.args.name),
+        chainId,
+        marketId,
+        name: event.args.name,
+        index: incentivesProgram.index,
+        rewardTokenId: createEntityId(incentivesProgram.rewardToken, chainId),
+        distributionEnd: BigInt(incentivesProgram.distributionEnd),
+        createdAt: event.block.timestamp,
+        updatedAt: event.block.timestamp,
+        emissionPerSecond: incentivesProgram.emissionPerSecond,
+      })
+      .onConflictDoNothing(),
+    createTokenIfNotExists(incentivesProgram.rewardToken, context),
   ]);
 });
 

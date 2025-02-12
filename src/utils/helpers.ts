@@ -98,10 +98,10 @@ export async function checkExistingEntity(
 }
 
 // TODO: On the future we might want to remove this call just for the input token
-export async function getOrCreateToken(
+export async function createTokenIfNotExists(
   address: Address,
   context: Context
-): Promise<typeof Token.$inferSelect> {
+) {
   const chainId = context.network.chainId;
   const tokenId = createEntityId(address, chainId);
 
@@ -121,14 +121,17 @@ export async function getOrCreateToken(
     throw new Error(`Failed to fetch token data for ${address}`);
   }
 
-  return await context.db.insert(Token).values({
-    id: tokenId,
-    chainId,
-    address,
-    symbol: tokenData[0].result as string,
-    decimals: tokenData[1].result as number,
-    name: tokenData[2].result as string,
-  });
+  return await context.db
+    .insert(Token)
+    .values({
+      id: tokenId,
+      chainId,
+      address,
+      symbol: tokenData[0].result as string,
+      decimals: tokenData[1].result as number,
+      name: tokenData[2].result as string,
+    })
+    .onConflictDoNothing();
 }
 
 export async function insertOrUpdatePosition(

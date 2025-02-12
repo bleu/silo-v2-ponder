@@ -48,22 +48,25 @@ async function marketDepositHandler({
         };
 
   await Promise.all([
-    db.insert(Deposit).values({
-      id: depositId,
-      chainId,
-      hash: event.transaction.hash,
-      nonce: BigInt(event.transaction.nonce),
-      logIndex: event.log.logIndex,
-      blockNumber: event.block.number,
-      timestamp: event.block.timestamp,
-      accountId,
-      sender: event.args.sender,
-      marketId,
-      amount: event.args.assets,
-      amountUSD: "0", // TBD
-      shares: event.args.shares,
-      isProtected: event.name === "DepositProtected",
-    }),
+    db
+      .insert(Deposit)
+      .values({
+        id: depositId,
+        chainId,
+        hash: event.transaction.hash,
+        nonce: BigInt(event.transaction.nonce),
+        logIndex: event.log.logIndex,
+        blockNumber: event.block.number,
+        timestamp: event.block.timestamp,
+        accountId,
+        sender: event.args.sender,
+        marketId,
+        amount: event.args.assets,
+        amountUSD: "0", // TBD
+        shares: event.args.shares,
+        isProtected: event.name === "DepositProtected",
+      })
+      .onConflictDoNothing(),
     db.update(Market, { id: marketId }).set((market) => ({
       totalAssets: market.totalAssets + event.args.assets,
       protectedAssets:
@@ -103,21 +106,24 @@ async function marketBorrowHandler({
     db.update(Market, { id: marketId }).set((market) => ({
       borrowed: market.borrowed + event.args.assets,
     })),
-    db.insert(Borrow).values({
-      id: borrowId,
-      chainId,
-      hash: event.transaction.hash,
-      nonce: BigInt(event.transaction.nonce),
-      logIndex: event.log.logIndex,
-      blockNumber: event.block.number,
-      timestamp: event.block.timestamp,
-      accountId,
-      sender: event.args.sender,
-      marketId,
-      amount: event.args.assets,
-      amountUSD: "0", // Placeholder for amountUSD
-      shares: event.args.shares,
-    }),
+    db
+      .insert(Borrow)
+      .values({
+        id: borrowId,
+        chainId,
+        hash: event.transaction.hash,
+        nonce: BigInt(event.transaction.nonce),
+        logIndex: event.log.logIndex,
+        blockNumber: event.block.number,
+        timestamp: event.block.timestamp,
+        accountId,
+        sender: event.args.sender,
+        marketId,
+        amount: event.args.assets,
+        amountUSD: "0", // Placeholder for amountUSD
+        shares: event.args.shares,
+      })
+      .onConflictDoNothing(),
     createOrUpdateAccount(event.args.owner, context),
     insertOrUpdatePosition(context, {
       marketId,
@@ -145,21 +151,24 @@ async function marketRepayHandler({
     db.update(Market, { id: marketId }).set((market) => ({
       borrowed: market.borrowed - event.args.assets,
     })),
-    db.insert(Repay).values({
-      id: repayId,
-      chainId,
-      hash: event.transaction.hash,
-      nonce: BigInt(event.transaction.nonce),
-      logIndex: event.log.logIndex,
-      blockNumber: event.block.number,
-      timestamp: event.block.timestamp,
-      accountId,
-      sender: event.args.sender,
-      marketId,
-      amount: event.args.assets,
-      amountUSD: "0", // Placeholder for amountUSD
-      shares: event.args.shares,
-    }),
+    db
+      .insert(Repay)
+      .values({
+        id: repayId,
+        chainId,
+        hash: event.transaction.hash,
+        nonce: BigInt(event.transaction.nonce),
+        logIndex: event.log.logIndex,
+        blockNumber: event.block.number,
+        timestamp: event.block.timestamp,
+        accountId,
+        sender: event.args.sender,
+        marketId,
+        amount: event.args.assets,
+        amountUSD: "0", // Placeholder for amountUSD
+        shares: event.args.shares,
+      })
+      .onConflictDoNothing(),
     createOrUpdateAccount(event.args.owner, context),
     insertOrUpdatePosition(context, {
       marketId,
@@ -208,22 +217,25 @@ async function marketWithdrawHandler({
         };
 
   await Promise.all([
-    db.insert(Withdraw).values({
-      id: withdrawId,
-      chainId,
-      hash: event.transaction.hash,
-      nonce: BigInt(event.transaction.nonce),
-      logIndex: event.log.logIndex,
-      blockNumber: event.block.number,
-      timestamp: event.block.timestamp,
-      accountId,
-      sender: event.args.sender,
-      marketId,
-      amount: event.args.assets,
-      amountUSD: "0", // Placeholder for amountUSD
-      shares: event.args.shares,
-      isProtected: event.name === "WithdrawProtected",
-    }),
+    db
+      .insert(Withdraw)
+      .values({
+        id: withdrawId,
+        chainId,
+        hash: event.transaction.hash,
+        nonce: BigInt(event.transaction.nonce),
+        logIndex: event.log.logIndex,
+        blockNumber: event.block.number,
+        timestamp: event.block.timestamp,
+        accountId,
+        sender: event.args.sender,
+        marketId,
+        amount: event.args.assets,
+        amountUSD: "0", // Placeholder for amountUSD
+        shares: event.args.shares,
+        isProtected: event.name === "WithdrawProtected",
+      })
+      .onConflictDoNothing(),
     db.update(Market, { id: marketId }).set((market) => ({
       totalAssets: market.totalAssets - event.args.assets,
       protectedAssets:

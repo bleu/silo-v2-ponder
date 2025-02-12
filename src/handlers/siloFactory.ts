@@ -3,7 +3,7 @@ import { LendingProtocol, Silo, Market } from "ponder:schema";
 import {
   createChainId,
   createEntityId,
-  getOrCreateToken,
+  createTokenIfNotExists,
 } from "../utils/helpers";
 import { SiloConfigAbi } from "../../abis/SiloConfigAbi";
 
@@ -79,52 +79,61 @@ ponder.on("SiloFactory:NewSilo", async ({ event, context }) => {
     idempotentProtocolCreateOrUpdate(context, chainId, (record) => ({
       totalPoolCount: record.totalPoolCount + 1,
     })),
-    db.insert(Silo).values({
-      id: siloId,
-      name: `Silo ${event.args.silo0}-${event.args.silo1}`,
-      chainId,
-      protocolId: protocolId,
-      siloId: BigInt(event.args.silo0),
-      configAddress: event.args.siloConfig,
-      implementation: event.args.implementation,
-      asset0Id: market0TokensId.inputTokenId,
-      asset1Id: market1TokensId.inputTokenId,
-      market0Id: market0Id,
-      market1Id: market1Id,
-      createdTimestamp: event.block.timestamp,
-      deployer: event.transaction.from,
-      interestLastUpdated: event.block.number,
-    }),
-    db.insert(Market).values({
-      id: market0Id,
-      address: event.args.silo0,
-      protocolId: protocolId,
-      siloId: siloId,
-      otherMarketId: market1Id,
-      createdTimestamp: event.block.timestamp,
-      createdBlockNumber: event.block.number,
-      ...market0Config,
-      ...market0TokensId,
-    }),
-    db.insert(Market).values({
-      id: market1Id,
-      address: event.args.silo1,
-      protocolId: protocolId,
-      siloId: siloId,
-      otherMarketId: market0Id,
-      createdTimestamp: event.block.timestamp,
-      createdBlockNumber: event.block.number,
-      ...market0Config,
-      ...market1TokensId,
-    }),
-    getOrCreateToken(event.args.token0, context),
-    getOrCreateToken(event.args.silo0, context),
-    getOrCreateToken(market0Config.protectedShareToken, context),
-    getOrCreateToken(market0Config.debtShareToken, context),
-    getOrCreateToken(event.args.token1, context),
-    getOrCreateToken(event.args.silo1, context),
-    getOrCreateToken(market1Config.protectedShareToken, context),
-    getOrCreateToken(market1Config.debtShareToken, context),
+    db
+      .insert(Silo)
+      .values({
+        id: siloId,
+        name: `Silo ${event.args.silo0}-${event.args.silo1}`,
+        chainId,
+        protocolId: protocolId,
+        siloId: BigInt(event.args.silo0),
+        configAddress: event.args.siloConfig,
+        implementation: event.args.implementation,
+        asset0Id: market0TokensId.inputTokenId,
+        asset1Id: market1TokensId.inputTokenId,
+        market0Id: market0Id,
+        market1Id: market1Id,
+        createdTimestamp: event.block.timestamp,
+        deployer: event.transaction.from,
+        interestLastUpdated: event.block.number,
+      })
+      .onConflictDoNothing(),
+    db
+      .insert(Market)
+      .values({
+        id: market0Id,
+        address: event.args.silo0,
+        protocolId: protocolId,
+        siloId: siloId,
+        otherMarketId: market1Id,
+        createdTimestamp: event.block.timestamp,
+        createdBlockNumber: event.block.number,
+        ...market0Config,
+        ...market0TokensId,
+      })
+      .onConflictDoNothing(),
+    db
+      .insert(Market)
+      .values({
+        id: market1Id,
+        address: event.args.silo1,
+        protocolId: protocolId,
+        siloId: siloId,
+        otherMarketId: market0Id,
+        createdTimestamp: event.block.timestamp,
+        createdBlockNumber: event.block.number,
+        ...market0Config,
+        ...market1TokensId,
+      })
+      .onConflictDoNothing(),
+    createTokenIfNotExists(event.args.token0, context),
+    createTokenIfNotExists(event.args.silo0, context),
+    createTokenIfNotExists(market0Config.protectedShareToken, context),
+    createTokenIfNotExists(market0Config.debtShareToken, context),
+    createTokenIfNotExists(event.args.token1, context),
+    createTokenIfNotExists(event.args.silo1, context),
+    createTokenIfNotExists(market1Config.protectedShareToken, context),
+    createTokenIfNotExists(market1Config.debtShareToken, context),
   ]);
 });
 
